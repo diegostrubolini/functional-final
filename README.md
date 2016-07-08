@@ -1,2 +1,2 @@
-# functional-final
+# Functional Final
 Functional Programming Final Exam

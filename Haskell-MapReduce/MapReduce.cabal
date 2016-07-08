@@ -1,0 +1,64 @@
+Name: MapReduce
+Version: 0.2
+Copyright: (c) 2011, Julian Porter
+License: BSD3
+License-File: LICENSE
+Author: Julian Porter
+Maintainer: Julian Porter
+Cabal-Version: >= 1.8 
+Stability: provisional
+Synopsis: A framework for MapReduce on multicore systems
+Description:
+{- A library that defines the 'MapReduce' monad for multicore systems, and exports 
+the necessary functions.
+
+Mapper / reducers are generalised to functions of type 
+@a -> ([(s,a)] -> [(s',b)])@ which are combined using the monad's bind 
+operation.  The resulting monad is executed on initial data by invoking
+'runMapReduce'.
+
+For programmers only wishing to write conventional map / reduce algorithms,
+which use functions of type @([s] -> [(s',b)])@ a wrapper function
+'wrapMR' is provided, which converts such a function into the
+appropriate monadic function.-}
+
+Category: Concurrency
+Build-Type: Simple
+Tested-With: GHC==6.10, GHC==7.0.3, GHC==7.2.1
+Extra-Source-Files: README
+
+Source-repository head
+  type:     git
+  location: git://github.com/Julianporter/Haskell-MapReduce.git
+
+Library
+  Build-Depends:   base >=4 && <5,
+                   parallel >= 3.1,
+                   deepseq >= 1.1,
+                   bytestring >= 0.9, 
+                   binary >= 0.5,
+                   pureMD5 >= 2.1,
+                   QuickCheck >= 2.4.1.1,
+                   Cabal >= 1.10
+  GHC-Options: 
+  Hs-Source-Dirs:  src
+  Exposed-Modules: Control.Monad2, 
+                   Control.Monad2.Trans.MapReduce, 
+                   Parallel.MapReduce.WordCount
+                   Parallel.MapReduce.Simple
+  Other-Modules:   
+  Extensions:      FlexibleInstances, MultiParamTypeClasses
+
+Executable wordcount
+  Main-Is:         WordCount.hs
+  Build-Depends:   base >=4 && <5,
+                   parallel >= 3.1,
+                   deepseq >= 1.1,
+                   bytestring >= 0.9, 
+                   binary >= 0.5,
+                   pureMD5 >= 2.1,
+                   QuickCheck >= 2.4.1.1
+  GHC-Options:     -threaded
+  Hs-Source-Dirs:  src
+  Other-modules:   Parallel.MapReduce.WordCount
+                   
