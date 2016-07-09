@@ -15,10 +15,18 @@ main = do
                 _ -> do
                         let nMap = case length args of
                                 1 -> 16
-                                _ -> read $ args!!1
+                                2 -> 16
+                                _ -> read $ args!!2
+                        let option = case length args of
+                                1 -> 1
+                                _ -> read $ args!!1 
                         d <- readMoviesFromJSON (head args)
                         let movies = case d of
                                 Nothing -> []
                                 Just ms -> filter isMovie ms
-                        return (topRatedMapReduce nMap movies)
+                        let res = case option of
+                                1 -> []
+                                2 -> popularDirectorsMapReduce nMap movies
+                                _ -> []
+                        return res
         print out
