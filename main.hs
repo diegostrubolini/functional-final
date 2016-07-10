@@ -11,7 +11,7 @@ main::IO()
 main = do
         args <- getArgs
         out <- case length args of 
-                0 -> error "Usage: moviecount [filename] ([num mappers])"
+                0 -> error "Usage: Main [filename] ([num mappers])"
                 _ -> do
                         let nMap = case length args of
                                 1 -> 16
@@ -25,8 +25,8 @@ main = do
                                 Nothing -> []
                                 Just ms -> filter isMovie ms
                         let res = case option of
-                                1 -> []
-                                2 -> popularDirectorsMapReduce nMap movies
+                                1 -> show (topRatedMovie nMap movies)
+                                2 -> show (popularDirectors nMap movies)
                                 _ -> []
                         return res
         print out
