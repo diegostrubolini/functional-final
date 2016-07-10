@@ -38,3 +38,16 @@ popularDirectorsMapper (x:xs) = [(x, director x)] ++ popularDirectorsMapper xs
 popularDirectorsReducer :: [Movie] -> [(String, Int)]
 popularDirectorsReducer [] = []
 popularDirectorsReducer xs = [(director (head xs), totalIMDbVotes xs)]
+
+-- Actors Couples
+
+actorsCouple:: Int -> [Movie] -> [((Actor, Actor), [Movie])] 
+actorsCouple n movies =  mapReduce n movies actorsCoupleMapper actorsCoupleReducer
+
+actorsCoupleMapper :: [Movie] -> [((Movie, (Actor, Actor)), (Actor, Actor))]
+actorsCoupleMapper [] = []
+actorsCoupleMapper (x:xs) = map (\ac -> ((x, ac), ac)) (actorsCombination x) ++ actorsCoupleMapper xs
+
+actorsCoupleReducer :: [(Movie, (Actor, Actor))] -> [((Actor, Actor), [Movie])]
+actorsCoupleReducer [] = []
+actorsCoupleReducer xs = [(snd (head xs), map fst xs)]

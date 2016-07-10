@@ -27,6 +27,7 @@ main = do
                         let res = case option of
                                 1 -> show (topRatedMovie nMap movies)
                                 2 -> show (popularDirectors nMap movies)
+                                3 -> show (actorsCouple nMap movies)
                                 _ -> []
                         return res
-        print out
+        putStr out

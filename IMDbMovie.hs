@@ -2,6 +2,7 @@ module IMDbMovie where
 
 import Data.Binary
 import Data.String.Utils
+import Data.List
 import Control.DeepSeq
 import GHC.Generics
 
@@ -33,8 +34,17 @@ imdbRatingNum movie = if (imdbRating movie) == "N/A" then 0 else read (imdbRatin
 imdbVotesNum :: Movie -> Int
 imdbVotesNum movie = if (imdbVotes movie) == "N/A" then 0 else read (replace "," "" (imdbVotes movie)) :: Int
 
+actorsList :: Movie -> [Actor]
+actorsList movie = if (actors movie) == "N/A" then [] else split ", " (actors movie)
+
 isMovie :: Movie -> Bool
 isMovie movie = (IMDbMovie.product movie) == "movie"
+
+actorsCombination :: Movie -> [(Actor, Actor)]
+actorsCombination movie = map orderActor [(x,y) | (x:ys) <- tails (actorsList movie), y <- ys]
+
+orderActor :: (Actor, Actor) -> (Actor, Actor)
+orderActor (a1, a2) = if a1 < a2 then (a1,a2) else (a2,a1)
 
 -- Operations over movie list
 
