@@ -1,0 +1,143 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathtools}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+
+\lstset{basicstyle=\small}
+\newcommand{\shellcmd}[1]{\\\indent\indent\texttt{\footnotesize\$ #1}\\}
+
+\begin{document}
+
+\title{Final Programación Funcional}
+\author{Strubolini Diego Martín}
+
+\maketitle
+
+\section{MapReduce}
+
+\subsection{Historia}
+
+\subsection{Haskell MapReduce}
+
+\section{Módulos}
+
+\subsection{IMDbMovie}
+
+En este módulo se incluyen los tipos y los métodos que representan el dominio de una película. Para representar dicho tipo, se utilizó una estructura de registro con el objetivo de poder relacionar fácilmente los datos de los archivos \textit{JSON} con el tipo definido en Haskell de la siguiente manera:
+
+\begin{lstlisting}[language=Haskell,frame=single]
+data Movie = Movie { title      :: String
+                   , year       :: String
+                   , director   :: String
+                   , genre      :: String
+                   , imdbRating :: String
+                   , imdbVotes  :: String
+                   , product    :: String
+                   , poster     :: String
+                   , actors     :: String 
+                   } deriving (Generic)
+\end{lstlisting}
+
+Se puede ver que todas los campos son de tipo \textit{String}, cuándo, por ejemplo, el año de una película tendría sentido que sea de algún tipo numérico. Es por esto, que se agregaron métodos en este módulo con el objetivo de obtener los datos de una película en un formato más conveniente.
+Por ejemplo la función para obtener la calificación de una película:
+
+\begin{lstlisting}[language=Haskell, frame=single]
+imdbRatingNum :: Movie -> Float
+imdbRatingNum movie = if (imdbRating movie) == "N/A" 
+                      then 0 
+                      else read (imdbRating movie) :: Float
+\end{lstlisting}
+
+También en este módulo se encuentran algunas operaciones simples sobre listas de películas, dónde se aprovechan varias funciones del lenguaje de manera que se expresen en una forma sencilla. Un ejemplo de esto, es la función obtener la película más votada de una lista de ellas.
+
+\begin{lstlisting}[language=Haskell, frame=single]
+topRated :: [Movie] -> [Movie]
+topRated xs = filter (\m-> imdbRatingNum m == topRating) xs 
+              where topRating = (maximum (map imdbRatingNum xs))
+\end{lstlisting}
+
+\subsection{JSONMovie}
+
+El objetivo de este módulo es el de usar la librería \texttt{Data.Aeson} para poder leer los archivos en formato \textit{JSON} obtenidos del sitio \texttt{IMDb}.
+Para poder realizar esto, se tuvieron que preprocesar los archivos con los datos de las películas por algunas restricciones del lenguaje. 
+
+El principal problema fue que los campos dentro del tipo \texttt{Movie} (mostrado en la sección anterior), no pueden empezar con letra mayúscula, ya que sino es tomado como otro tipo. Es por esto que a todos los campos utilizados del archivo se les pasó la primer letra a minúscula. 
+
+El segundo problema fue el tipo de cada elemento de la lista en el archivo. Dentro de los archivos hay información no sólo de películas, sino también de series, documentales, etc. Dicho campo que indicaba el tipo se llamaba \textit{type}, la cuál es otra es de las palabras reservadas para el lenguaje, por lo tanto se decidió cambiar su nombre a \textit{product}.
+
+\subsection{MapReduceOperations}
+
+Una vez conseguida la manera de representar la estructura de datos de una película y de cargarla con datos a partir de un archivo, ya se puede empezar a realizar operaciones sobre ella utilizando el modelo de MapReduce.
+Dentro de este módulo, se encuentran todas las operaciones que se implementaron sobre una lista de películas utilizando el modelo previamente mencionado.
+
+Para que la creación de dichos métodos sea más sencilla, se creó una función auxiliar llamada \texttt{MapReduce} la cual utilizarán todos los métodos como interfaz para acceder a los métodos provistos por la librería \texttt{Parallel.MapReduce.Simple}. 
+
+\begin{lstlisting}[language=Haskell, frame=single]
+mapReduce :: (Eq c, Binary a, NFData b, NFData c, NFData d1, NFData d2) 
+                 => Int -> [a] -> ([a] -> [(b, c)]) -> ([b] -> [(d1, d2)])
+                    -> [(d1,d2)]
+mapReduce n state mapper reducer = run mr state
+                                   where mr = distribute n >>= 
+                                              lift mapper >>= 
+                                              lift reducer 
+\end{lstlisting}
+
+Este método provee una capa de abstracción sobre el funcionamiento de dicha librería ya que logra que lo único que el desarrollador debe implementar es la función \textit{mapper} y \textit{reducer}, además de especificar la cantidad de mappers paralelos a utilizar.
+
+Se puede destacar que la mayoría de los parámetros de dicha función son de tipo Binary o NFData, los cuales son necesarios ya que se cuenta con paralelismo. Dichos parámetros deben ser serializables con el objetivo de poder ser enviados entre distintos hilos de ejecución. También es entendible que el parámetro \texttt{c} tenga una función de igualdad ya que es necesaria para poder agrupar los resultados de los mappers en base a una misma clave.
+
+Una vez definida dicha función, se implementaron las siguientes operaciones:
+
+\begin{itemize}
+	\item \textbf{topRatedMovie:} Películas más votadas agrupadas por el año de estreno. 
+	\item \textbf{popularDirectors:} Directores cuya popularidad proviene de la suma de los votos de sus películas.
+	\item \textbf{actorsCouple:} Películas en las cuales trabajaron juntos dos actores.
+	\item \textbf{feticheActors:} Actores que trabajaron más veces junto a un director.
+\end{itemize}
+
+Algunas de dichas operaciones son más complejas que otras, pero tienen en común que, al utilizar el modelo MapReduce, son paralelizables.
+\subsection{Main}
+
+Módulo principal encargado de obtener los comandos ingresados por el usuario, llamar a las operaciones correspondientes e imprimir su resultado por consola. De acuerdo a la operación elegida, puede recibir parámetros adicionales con el objetivo de permitir una mayor flexibilidad al usuario a realizar operaciones en base a sus necesidades. Por ejemplo para cada una de las operaciones se puede especificar lo siguiente:
+
+\begin{itemize}
+	\item \textbf{topRatedMovie:} Año de las películas más votadas
+	\item \textbf{popularDirectors:} Los N directores más populares
+	\item \textbf{actorsCouple:} Actores que trabajaron juntos en N películas o más
+	\item \textbf{feticheActors:} Actores que trabajaron más veces junto a un director específico.
+\end{itemize}
+
+\subsubsection{Compilación y Ejecución}
+Para compilar el proyecto se deben compilar todos los módulos de la siguiente manera:
+	\begin{lstlisting}[language=bash]
+  $ ghc Main.hs IMDbMovie.hs JSONMovie.hs MapReduceOperations.hs -XDeriveGeneric
+	\end{lstlisting}
+  
+El \texttt{-XDeriveGeneric} es necesario para poder derivar tipos genéricos. Una vez generado el ejecutable se lo puede utilizar de la siguiente manera:
+
+
+  	\begin{lstlisting}[language=bash]
+  $ ./Main <json_path> <operation_num> [operation_param] [num_mappers]
+    \end{lstlisting}
+    
+\begin{itemize}
+	\item \textbf{json\_path:} Path al archivo JSON.
+	\item \textbf{operation\_num:} Número correspondiente a la operación que se desea realizar.
+	\item \textbf{operation\_param:} Parámetro adicional para las operaciones
+	\item \textbf{num\_mappers:} Cantidad de mappers a utilizar
+\end{itemize}
+  
+
+\section{Paralelismo}
+
+
+
+\subsection{Resultados}
+
+Lorem ipsum
+
+\end{document}

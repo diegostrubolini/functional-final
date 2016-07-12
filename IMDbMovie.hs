@@ -49,7 +49,7 @@ orderActor (a1, a2) = if a1 < a2 then (a1,a2) else (a2,a1)
 -- Operations over movie list
 
 topRated :: [Movie] -> [Movie]
-topRated xs = filter (\m-> imdbRatingNum m == (maximum (map imdbRatingNum xs))) xs
+topRated xs = filter (\m-> imdbRatingNum m == topRating) xs where topRating = (maximum (map imdbRatingNum xs))
 
 totalIMDbVotes :: [Movie] -> Int
 totalIMDbVotes xs = sum (map imdbVotesNum xs)
