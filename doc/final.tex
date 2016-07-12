@@ -6,6 +6,9 @@
 \usepackage[spanish,es-noquoting]{babel}
 \usepackage{listings}
 \usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
 
 \lstset{basicstyle=\small}
 \newcommand{\shellcmd}[1]{\\\indent\indent\texttt{\footnotesize\$ #1}\\}
@@ -17,12 +20,39 @@
 
 \maketitle
 
+\section{Introducción}
+
+En el presente trabajo, se analizan distintas operaciones realizadas utilizando el modelo \textit{MapReduce}. Dichas operaciones pertenecen al dominio de las películas y se utilizan datos reales obtenidos del sitio \href{http://IMDb.com}{IMDb} en formato \textit{JSON}. El lenguaje de programación elegido es \textit{Haskell} y la librería elegida para la implementación del mencionado model es \textit{Haskell-MapReduce}.
+
+Dicha implementación cuenta con la posibilidad de tener paralelismo al realizar las operaciones. Es por ello que se realizaron distintas pruebas con el objetivo de analizar el impacto de dicha característica.
+
 \section{MapReduce}
 
-\subsection{Historia}
+\subsection{Principio Básicos}
+
+El modelo de programación \textit{MapReduce} fue presentado por trabajadores de la empresa Google en el año 2008 \cite{dean2008mapreduce} como una solución sencilla a los procesamientos de gran escala dónde se require paralelismo y distribución.
+
+El modelo comprende dos funciones claves:
+
+La función \textit{map} o \textit{mapper} la cual procesa un entrada con clave/valor y produce una clave de salida y una valor intermedio:
+
+\begin{lstlisting}
+	map (in_key, in_value) -> list(out_key, intermediate_value)
+\end{lstlisting}
+
+La función \textit{reduce} o \textit{reducer} la cual combina todos los valores intermedios para una clave particular y produce un conjunto de valores agrupados:
+
+\begin{lstlisting}
+	reduce (out_key, list(intermediate_value)) -> list(out_value)
+\end{lstlisting}
+
+Dichas funciones están inspiradas en primitivas similares en LISP.
 
 \subsection{Haskell MapReduce}
 
+Este será el módulo a utilizar para el presente trabajo. La idea de implementar el modelo \textit{MapReduce} como una mónada fue presentado por Julian Porter en el año 2011 \cite{porter2011monad}.
+
+Dicho módulo provee una interfaz de abstracción por sobre la implementación de dicha mónada lo que permite al usuario utilizar \textit{MapReduce} sin necesidad de conocer la implementación interna. 
 \section{Módulos}
 
 \subsection{IMDbMovie}
@@ -134,10 +164,43 @@ El \texttt{-XDeriveGeneric} es necesario para poder derivar tipos genéricos. Un
 
 \section{Paralelismo}
 
+Para permitir que un programa escrito en haskell genere threads de ejecución se lo debe compilar con el flag \texttt{-threaded}. De esta manera, se habilita la generación de threads cuándo se utilizan estructuras de datos como \textit{parMap} del módulo \texttt{Control.Parallel.Strategies}. En el presente trabajo, el paralelismo es utilizado con el objetivo de distribuir las películas en distintos mappers con el objetivo de que actúen sobre distintos núcleos en la mayor medida posible.
+
+Una vez logrado eso, se pueden ver los siguientes resultados obtenidos del tiempo de ejecución de algunas de las operaciones implementadas para distinta cantidad de núcleos y distinta cantidad de películas.
 
 
 \subsection{Resultados}
 
-Lorem ipsum
+Para cada operación se realizaron 5 corridas y se realizó el promedio del tiempo que demoró desde que se lo corre hasta que imprime el resultado.
+Para obtener dicho valor se utilizó el comando \texttt{time} nativo de los sistemas \textit{BSD}. Las pruebas se realizaron utilizando de 1 a 4 cores o núcleos con el objetivo de comparar la performance para cada caso.
+
+A continuación se muestran los resultados de las pruebas realizadas:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{images/topRated.pdf}
+    \caption{Tiempo de ejecución del programa para la operación \texttt{topRated} para archivos de 40, 200 y 20000 películas}
+    \label{fig:topRated}
+\end{figure}
+
+En la Figura \ref{fig:topRated} se puede ver dicha operación no fue afectada en gran medida por la utilización de varios cores. Esto se debe a que la operación \texttt{topRated} es la que requiere la menor cantidad de procesamiento de las operaciones implementadas. Por lo tanto, al agregar más núcleos, se indica que la información debe ser distribuida entre ellos y esto también afecta la performance. Al ser la operación que requiere menos procesamiento con respecto a las demás, es posible que no fuese necesario distribuir la información para la cantidad de registros de películas utilizada.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{images/popularDir.pdf}
+    \caption{Tiempo de ejecución del programa para la operación \texttt{popularDirectors} para archivos de 40, 200 y 20000 películas}
+    \label{fig:popDir}
+\end{figure}
+
+En la Figura \ref{fig:popDir} se puede ver un ejemplo donde para una gran cantidad de datos (20000 películas) se mejora la performance al distribuir el procesamiento entre distintos cores. Se puede ver que a medida que aumentan la cantidad de cores utilizados, se mejora el tiempo que demora el programa en devolver un resultado. Para los archivos con pocas películas, sucede lo mismo que en la operación anterior, es decir, no vale la pena distribuir dicho procesamiento si no se cuenta con una gran cantidad de datos.
+
+\section{Conclusión}
+
+El modelo \textit{MapReduce} resulta de gran utilidad cuándo se requiere analizar una gran cantidad de datos. Con solo aportar dos funciones, se pueden realizar operaciones que, acompañadas de la ventaja del lenguaje, logran escribirse de manera sencilla y además obtener resultados relevantes del dominio que se desea analizar.
+
+Si se cuenta con un sistema distribuido, se puede ver una mejora en el tiempo de procesamiento cuándo se utilizan gran cantidad de datos a los cuales se les quiere realizar operaciones complejas.
+
+\bibliographystyle{plain}
+\bibliography{References}
 
 \end{document}

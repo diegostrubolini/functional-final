@@ -31,13 +31,13 @@ topRatedReducer xs = [(year (head xs), topRated xs)]
 popularDirectors:: Int -> [Movie] -> [(String, Int)] 
 popularDirectors n movies = mapReduce n movies popularDirectorsMapper popularDirectorsReducer
 
-popularDirectorsMapper :: [Movie] -> [(Movie, String)]
+popularDirectorsMapper :: [Movie] -> [((Movie,Director), Director)]
 popularDirectorsMapper [] = []
-popularDirectorsMapper (x:xs) = [(x, director x)] ++ popularDirectorsMapper xs
+popularDirectorsMapper (x:xs) = map (\d -> ((x, d), d)) (directorsList x) ++ popularDirectorsMapper xs
 
-popularDirectorsReducer :: [Movie] -> [(String, Int)]
+popularDirectorsReducer :: [(Movie, Director)] -> [(String, Int)]
 popularDirectorsReducer [] = []
-popularDirectorsReducer xs = [(director (head xs), totalIMDbVotes xs)]
+popularDirectorsReducer xs = [((snd (head xs)), totalIMDbVotes (map fst xs))]
 
 -- Actors Couples
 

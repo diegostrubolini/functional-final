@@ -19,6 +19,7 @@ data Movie =
          } deriving (Generic)
 
 type Actor = String
+type Director = String
 
 instance Binary Movie
 instance NFData Movie
@@ -36,6 +37,9 @@ imdbVotesNum movie = if (imdbVotes movie) == "N/A" then 0 else read (replace ","
 
 actorsList :: Movie -> [Actor]
 actorsList movie = if (actors movie) == "N/A" then [] else split ", " (actors movie)
+
+directorsList :: Movie -> [Director]
+directorsList movie = if (director movie) == "N/A" then [] else split ", " (director movie)
 
 isMovie :: Movie -> Bool
 isMovie movie = (IMDbMovie.product movie) == "movie"
