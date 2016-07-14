@@ -30,16 +30,16 @@ main = do
                                 Nothing -> []
                                 Just ms -> filter isMovie ms
                         let res = case option of
-                                1 -> show (case param of
+                                1 -> printTopRated (case param of
                                         -1 -> topRatedMovie nMap 0 movies
                                         _ -> topRatedMovie nMap param movies)
-                                2 -> show (case param of
+                                2 -> printPopularDirectors (case param of
                                         -1 -> popularDirectors nMap 0 movies
                                         _ -> popularDirectors nMap param movies)
-                                3 -> show (case param of
+                                3 -> printActorsCouple (case param of
                                         -1 -> actorsCouple nMap 1 movies
                                         _ -> actorsCouple nMap param movies)
-                                4 -> show (feticheActors nMap movies)
+                                4 -> printFeticheActors (feticheActors nMap movies)
                                 _ -> []
                         return res
         putStrLn "=============================="
@@ -47,3 +47,25 @@ main = do
         putStrLn "=============================="
         putStrLn out
         putStrLn "=============================="
+
+printTopRated:: [(String, [Movie])] -> String
+printTopRated = foldr (\m ms -> "[" ++ (fst m) ++ "]" ++ "\n" ++  printMovies (snd m) ++ ms) ""
+
+printPopularDirectors:: [(String, Int)] -> String
+printPopularDirectors = foldr (\(n,v) ds ->  n ++ " : " ++ show v  ++ "\n"  ++ ds) ""
+
+printActorsCouple:: [((Actor, Actor), [Movie])] -> String
+printActorsCouple = foldr (\((a1,a2), ms) as ->  "[" ++ a1 ++ "|" ++ a2 ++ "]" ++ "\n" ++ printMovies ms ++ as) ""
+
+printFeticheActors:: [(Director, [Actor])] -> String
+printFeticheActors = foldr (\(d,as) fs ->  "[" ++ d ++ "] : " ++ printActors as ++ "\n"  ++ fs) ""
+
+printMovies:: [Movie] -> String
+printMovies =  foldr (\m ms -> show m ++ "\n" ++ ms) ""
+
+printActors:: [Actor] -> String
+printActors [] = ""
+printActors [a] = a
+printActors (a:as) =  a ++ " | " ++ printActors as
+
+
