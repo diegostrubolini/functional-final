@@ -11,6 +11,7 @@
 \usepackage{float}
 
 \lstset{basicstyle=\small}
+          
 \newcommand{\shellcmd}[1]{\\\indent\indent\texttt{\footnotesize\$ #1}\\}
 
 \begin{document}
@@ -22,7 +23,7 @@
 
 \section{Introducción}
 
-En el presente trabajo, se analizan distintas operaciones realizadas utilizando el modelo \textit{MapReduce}. Dichas operaciones pertenecen al dominio de las películas y se utilizan datos reales obtenidos del sitio \href{http://IMDb.com}{IMDb} en formato \textit{JSON}. El lenguaje de programación elegido es \textit{Haskell} y la librería elegida para la implementación del mencionado model es \textit{Haskell-MapReduce}.
+En el presente trabajo, se analizan distintas operaciones realizadas utilizando el modelo \textit{MapReduce}. Dichas operaciones pertenecen al dominio de las películas y se utilizan datos reales obtenidos del sitio \href{http://IMDb.com}{IMDb} en formato \textit{JSON}. El lenguaje de programación elegido es \textit{Haskell} y la librería elegida para la implementación del mencionado modelo es \textit{Haskell-MapReduce}.
 
 Dicha implementación cuenta con la posibilidad de tener paralelismo al realizar las operaciones. Es por ello que se realizaron distintas pruebas con el objetivo de analizar el impacto de dicha característica.
 
@@ -30,11 +31,11 @@ Dicha implementación cuenta con la posibilidad de tener paralelismo al realizar
 
 \subsection{Principio Básicos}
 
-El modelo de programación \textit{MapReduce} fue presentado por trabajadores de la empresa Google en el año 2008 \cite{dean2008mapreduce} como una solución sencilla a los procesamientos de gran escala dónde se require paralelismo y distribución.
+El modelo de programación \textit{MapReduce} fue presentado por trabajadores de la empresa Google en el año 2008 \cite{dean2008mapreduce} como una solución sencilla a los procesamientos de gran escala dónde se requiere paralelismo y distribución.
 
 El modelo comprende dos funciones claves:
 
-La función \textit{map} o \textit{mapper} la cual procesa un entrada con clave/valor y produce una clave de salida y una valor intermedio:
+La función \textit{map} o \textit{mapper} la cual procesa una entrada con clave/valor y produce una clave de salida y una valor intermedio:
 
 \begin{lstlisting}
 	map (in_key, in_value) -> list(out_key, intermediate_value)
@@ -46,18 +47,18 @@ La función \textit{reduce} o \textit{reducer} la cual combina todos los valores
 	reduce (out_key, list(intermediate_value)) -> list(out_value)
 \end{lstlisting}
 
-Dichas funciones están inspiradas en primitivas similares en LISP.
+Dichas funciones están inspiradas en primitivas similares en los lenguajes de programación de tipo LISP.
 
 \subsection{Haskell MapReduce}
 
-Este será el módulo a utilizar para el presente trabajo. La idea de implementar el modelo \textit{MapReduce} como una mónada fue presentado por Julian Porter en el año 2011 \cite{porter2011monad}.
+Este será el módulo a utilizar para el presente trabajo, presentado por Julian Porter en el año 2011 \cite{porter2011monad} dónde propuso una mónada para \textit{MapReduce}.
 
-Dicho módulo provee una interfaz de abstracción por sobre la implementación de dicha mónada lo que permite al usuario utilizar \textit{MapReduce} sin necesidad de conocer la implementación interna. 
+Dicho módulo provee una interfaz de abstracción por sobre dicha mónada lo que permite al usuario utilizar \textit{MapReduce} sin necesidad de conocer la implementación interna. 
 \section{Módulos}
 
 \subsection{IMDbMovie}
 
-En este módulo se incluyen los tipos y los métodos que representan el dominio de una película. Para representar dicho tipo, se utilizó una estructura de registro con el objetivo de poder relacionar fácilmente los datos de los archivos \textit{JSON} con el tipo definido en Haskell de la siguiente manera:
+En este módulo se incluyen los tipos y los métodos que representan el dominio de una película. Para representar dicho tipo, se utilizó una estructura de registro con el objetivo de poder relacionar fácilmente los datos de los archivos \textit{JSON} con un tipo definido en Haskell de la siguiente manera:
 
 \begin{lstlisting}[language=Haskell,frame=single]
 data Movie = Movie { title      :: String
@@ -73,21 +74,21 @@ data Movie = Movie { title      :: String
 \end{lstlisting}
 
 Se puede ver que todas los campos son de tipo \textit{String}, cuándo, por ejemplo, el año de una película tendría sentido que sea de algún tipo numérico. Es por esto, que se agregaron métodos en este módulo con el objetivo de obtener los datos de una película en un formato más conveniente.
-Por ejemplo la función para obtener la calificación de una película:
+Por ejemplo la función para obtener la cantidad de votos de una película:
 
 \begin{lstlisting}[language=Haskell, frame=single]
-imdbRatingNum :: Movie -> Float
-imdbRatingNum movie = if (imdbRating movie) == "N/A" 
-                      then 0 
-                      else read (imdbRating movie) :: Float
+imdbVotesNum :: Movie -> Int
+imdbVotesNum movie = if (imdbVotes movie) == "N/A" 
+                     then 0 
+                     else read (replace "," "" (imdbVotes movie)) :: Int
 \end{lstlisting}
 
-También en este módulo se encuentran algunas operaciones simples sobre listas de películas, dónde se aprovechan varias funciones del lenguaje de manera que se expresen en una forma sencilla. Un ejemplo de esto, es la función obtener la película más votada de una lista de ellas.
+También en este módulo se encuentran algunas operaciones simples sobre listas de películas, dónde se aprovechan varias funciones del lenguaje de manera que se expresen de forma sencilla. Un ejemplo de esto, es la función obtener la película más votada de una lista de ellas.
 
 \begin{lstlisting}[language=Haskell, frame=single]
 topRated :: [Movie] -> [Movie]
-topRated xs = filter (\m-> imdbRatingNum m == topRating) xs 
-              where topRating = (maximum (map imdbRatingNum xs))
+topRated xs = filter (\m-> imdbVotesNum m == topRatings) xs 
+              where topRatings = (maximum (map imdbVotesNum xs))
 \end{lstlisting}
 
 \subsection{JSONMovie}
@@ -97,7 +98,7 @@ Para poder realizar esto, se tuvieron que preprocesar los archivos con los datos
 
 El principal problema fue que los campos dentro del tipo \texttt{Movie} (mostrado en la sección anterior), no pueden empezar con letra mayúscula, ya que sino es tomado como otro tipo. Es por esto que a todos los campos utilizados del archivo se les pasó la primer letra a minúscula. 
 
-El segundo problema fue el tipo de cada elemento de la lista en el archivo. Dentro de los archivos hay información no sólo de películas, sino también de series, documentales, etc. Dicho campo que indicaba el tipo se llamaba \textit{type}, la cuál es otra es de las palabras reservadas para el lenguaje, por lo tanto se decidió cambiar su nombre a \textit{product}.
+El segundo problema fue el tipo de cada elemento de la lista en el archivo. Dentro de los archivos hay información no sólo de películas, sino también de series, documentales, etc. Dicho campo se llamaba \textit{type}, la cuál es otra es de las palabras reservadas de el lenguaje, por lo tanto se decidió cambiar su nombre a \textit{product}.
 
 \subsection{MapReduceOperations}
 
@@ -132,13 +133,12 @@ Una vez definida dicha función, se implementaron las siguientes operaciones:
 Algunas de dichas operaciones son más complejas que otras, pero tienen en común que, al utilizar el modelo MapReduce, son paralelizables.
 \subsection{Main}
 
-Módulo principal encargado de obtener los comandos ingresados por el usuario, llamar a las operaciones correspondientes e imprimir su resultado por consola. De acuerdo a la operación elegida, puede recibir parámetros adicionales con el objetivo de permitir una mayor flexibilidad al usuario a realizar operaciones en base a sus necesidades. Por ejemplo para cada una de las operaciones se puede especificar lo siguiente:
+Módulo principal encargado de obtener los comandos ingresados por el usuario, llamar a las operaciones correspondientes e imprimir su resultado por consola. De acuerdo a la operación elegida, puede recibir parámetros adicionales con el objetivo de brindar una mayor flexibilidad al usuario para realizar operaciones en base a sus necesidades. Por ejemplo para las siguientes operaciones se puede especificar:
 
 \begin{itemize}
-	\item \textbf{topRatedMovie:} Año de las películas más votadas
-	\item \textbf{popularDirectors:} Los N directores más populares
+	\item \textbf{topRatedMovie:} Películas mejor calificadas mayores a un año
+	\item \textbf{popularDirectors:} Los directores cuya popularidad supere determinado valor
 	\item \textbf{actorsCouple:} Actores que trabajaron juntos en N películas o más
-	\item \textbf{feticheActors:} Actores que trabajaron más veces junto a un director específico.
 \end{itemize}
 
 \subsubsection{Compilación y Ejecución}
@@ -183,7 +183,7 @@ A continuación se muestran los resultados de las pruebas realizadas:
     \label{fig:topRated}
 \end{figure}
 
-En la Figura \ref{fig:topRated} se puede ver dicha operación no fue afectada en gran medida por la utilización de varios cores. Esto se debe a que la operación \texttt{topRated} es la que requiere la menor cantidad de procesamiento de las operaciones implementadas. Por lo tanto, al agregar más núcleos, se indica que la información debe ser distribuida entre ellos y esto también afecta la performance. Al ser la operación que requiere menos procesamiento con respecto a las demás, es posible que no fuese necesario distribuir la información para la cantidad de registros de películas utilizada.
+En la Figura \ref{fig:topRated} se puede ver dicha operación no fue afectada en gran medida por la utilización de varios cores. Esto se debe a que la operación \texttt{topRated} requiere la menor cantidad de procesamiento de las operaciones implementadas. Por lo tanto, al agregar más núcleos, se indica que la información debe ser distribuida entre ellos y esto también afecta la performance. Al ser la operación que requiere menos procesamiento con respecto a las demás, es posible que no fuese necesario distribuir la información para la cantidad de registros de películas utilizada.
 
 \begin{figure}[H]
     \centering
@@ -196,11 +196,34 @@ En la Figura \ref{fig:popDir} se puede ver un ejemplo donde para una gran cantid
 
 \section{Conclusión}
 
-El modelo \textit{MapReduce} resulta de gran utilidad cuándo se requiere analizar una gran cantidad de datos. Con solo aportar dos funciones, se pueden realizar operaciones que, acompañadas de la ventaja del lenguaje, logran escribirse de manera sencilla y además obtener resultados relevantes del dominio que se desea analizar.
+El modelo \textit{MapReduce} resulta de gran utilidad cuándo se requiere analizar una gran cantidad de datos. Con solo aportar dos funciones, se pueden realizar operaciones que, aprovechando la notación del lenguaje, logran escribirse de manera sencilla y además obtener resultados relevantes del dominio que se desea analizar.
 
 Si se cuenta con un sistema distribuido, se puede ver una mejora en el tiempo de procesamiento cuándo se utilizan gran cantidad de datos a los cuales se les quiere realizar operaciones complejas.
 
+\pagebreak
+
+\section{Código Fuente}
+
+\lstset{breaklines=true, xleftmargin=.1in, xrightmargin=.1in} 
+
+\subsection{IMDbMovie.hs}
+\lstinputlisting[language=haskell, frame=single,  basicstyle=\tiny]{../IMDbMovie.hs}
+
+\pagebreak
+
+\subsection{MapReduceOperations.hs}
+\lstinputlisting[language=haskell, frame=single, basicstyle=\tiny]{../MapReduceOperations.hs}
+
+\pagebreak
+
+\subsection{JSONMovie.hs}
+\lstinputlisting[language=haskell, frame=single, basicstyle=\tiny]{../JSONMovie.hs}
+
+\subsection{Main.hs}
+\lstinputlisting[language=haskell, frame=single, basicstyle=\tiny]{../Main.hs}
+
 \bibliographystyle{plain}
 \bibliography{References}
+
 
 \end{document}

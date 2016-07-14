@@ -29,11 +29,11 @@ instance Show Movie where
 
 -- Operations over a movie
 
-imdbRatingNum :: Movie -> Float
-imdbRatingNum movie = if (imdbRating movie) == "N/A" then 0 else read (imdbRating movie) :: Float
-
 imdbVotesNum :: Movie -> Int
 imdbVotesNum movie = if (imdbVotes movie) == "N/A" then 0 else read (replace "," "" (imdbVotes movie)) :: Int
+
+yearNum :: Movie -> Int
+yearNum movie = if (year movie) == "N/A" then 0 else read (year movie) :: Int
 
 actorsList :: Movie -> [Actor]
 actorsList movie = if (actors movie) == "N/A" then [] else split ", " (actors movie)
@@ -53,7 +53,7 @@ orderActor (a1, a2) = if a1 < a2 then (a1,a2) else (a2,a1)
 -- Operations over movie list
 
 topRated :: [Movie] -> [Movie]
-topRated xs = filter (\m-> imdbRatingNum m == topRating) xs where topRating = (maximum (map imdbRatingNum xs))
+topRated xs = filter (\m-> imdbVotesNum m == topRatings) xs where topRatings = (maximum (map imdbVotesNum xs))
 
 totalIMDbVotes :: [Movie] -> Int
 totalIMDbVotes xs = sum (map imdbVotesNum xs)
